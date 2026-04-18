@@ -1,0 +1,12 @@
+{
+ "hi": "Hello! How can I assist you today?",
+ "fraud": "You can report fraud using the fraud detection tools.",
+ "loan": "You can check loan eligibility using the Loan Analyzer.",
+ "otp": "Never share your OTP with anyone. Banks never ask for OTP.",
+ "phishing": "Phishing links try to steal your login details. Always check website URL.",
+ "kyc": "KYC scams trick users into updating fake bank information.",
+ "investment": "Fraud investment groups promise unrealistic returns.",
+ "report fraud": "Immediately contact your bank and report fraud at cybercrime.gov.in",
+ "shared otp": "If you shared your OTP, contact your bank immediately and block your account."
+
+}

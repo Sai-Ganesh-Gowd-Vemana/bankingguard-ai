@@ -1,0 +1,17 @@
+# ML Models stored on Hugging Face
+ai-services/models/*.pkl
+ai-services/models/*.h5
+ai-services/models/.ready
+
+# Upload script contains token
+ai-services/upload_models.py
+
+# Env files
+.env
+ai-services/.env
+frontend/.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
