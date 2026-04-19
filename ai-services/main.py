@@ -74,7 +74,6 @@ def download_models():
     files = [
         "spam_model.pkl",
         "tfidf_vectorizer.pkl",
-        "fraud_detection_model.h5",
         "vectorizer.pkl",
         "url_model.pkl",
     ]
