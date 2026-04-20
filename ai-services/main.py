@@ -208,35 +208,26 @@ def detect_url(data: URLRequest):
 async def detect_image(file: UploadFile = File(...)):
 
     contents = await file.read()
-
     image = Image.open(io.BytesIO(contents)).convert("RGB")
-
     img = np.array(image)
 
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # FIX: Use RGB2GRAY instead of BGR2GRAY
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
-    # OCR text extraction
     extracted_text = pytesseract.image_to_string(gray)
 
-    # If OCR didn't detect anything
-    if extracted_text.strip() == "":
+    if not extracted_text.strip():
         return {
-            "text": "",
+            "text": "No text detected in image",
             "prediction": "unknown",
             "confidence": 0
         }
 
-    # Use SMS ML model to classify extracted text
     vector = vectorizer.transform([extracted_text])
-
     prediction = model.predict(vector)[0]
-
     probs = model.predict_proba(vector)[0]
-
     spam_index = list(model.classes_).index("spam")
-
     confidence = probs[spam_index]
-
     label = "scam" if prediction == "spam" else "safe"
 
     return {
@@ -255,23 +246,27 @@ def loan_eligibility(data: LoanRequest):
 
     income = data.income
     credit = data.credit_score
-    loans = data.existing_loans
+    loans  = data.existing_loans
 
     score = 0
 
-    if income > 50000:
+    if income >= 50000:
         score += 2
-    elif income > 30000:
+    elif income >= 25000:
         score += 1
 
     if credit >= 750:
+        score += 3
+    elif credit >= 700:
         score += 2
     elif credit >= 650:
         score += 1
 
     if loans == 0:
         score += 2
-    elif loans <= 2:
+    elif loans <= 5000:
+        score += 2
+    elif loans <= 15000:
         score += 1
 
     if score >= 5:
@@ -287,7 +282,6 @@ def loan_eligibility(data: LoanRequest):
         "existing_loans": loans,
         "loan_result": result
     }
-
 
 # ============================
 # INVESTMENT FRAUD CHECK
@@ -491,36 +485,29 @@ def quiz_legacy():
 
 reminders = []
 
-
 @app.post("/add-reminder")
 def add_reminder(reminder: Reminder):
-
-    reminders.append(reminder)
-
+    reminders.append({
+        "title": reminder.title,
+        "date": reminder.date
+    })
     return {
         "message": "Reminder added successfully",
         "reminder": reminder
     }
 
-
 @app.get("/reminders")
 def get_reminders():
-
     return {"reminders": reminders}
-
 
 @app.delete("/delete-reminder/{index}")
 def delete_reminder(index: int):
-
-    if index < len(reminders):
-
+    if 0 <= index < len(reminders):
         removed = reminders.pop(index)
-
         return {
             "message": "Reminder deleted",
             "removed": removed
         }
-
     return {"error": "Reminder not found"}
 
 from fastapi.middleware.cors import CORSMiddleware
