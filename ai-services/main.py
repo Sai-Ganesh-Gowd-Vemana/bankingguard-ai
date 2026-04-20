@@ -514,8 +514,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # we keep * for now, update after you get Vercel URL
-    allow_credentials=False,  # must be False when using *
+    allow_origins=[
+        "https://bankingguard-ai.vercel.app"
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
