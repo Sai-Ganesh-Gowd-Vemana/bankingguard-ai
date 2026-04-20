@@ -67,9 +67,10 @@ HF_REPO = "SaiGaneshGowdVemana/bankingguard-models"
 def download_models():
     os.makedirs("models", exist_ok=True)
 
+    # Force fresh download every restart
+    # (safe because Render disk is wiped on each deploy anyway)
     if os.path.exists("models/.ready"):
-        print("✅ Models already present, skipping download")
-        return
+        os.remove("models/.ready")
 
     files = [
         "spam_model.pkl",
