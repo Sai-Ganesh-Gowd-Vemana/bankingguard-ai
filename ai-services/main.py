@@ -224,7 +224,16 @@ async def detect_image(file: UploadFile = File(...)):
         image = Image.open(io.BytesIO(contents)).convert("RGB")
         img = np.array(image)
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        extracted_text = pytesseract.image_to_string(gray)
+
+# ✅ Improve OCR quality
+        gray = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
+        gray = cv2.medianBlur(gray, 3)
+
+# ✅ Better OCR config
+        extracted_text = pytesseract.image_to_string(gray, config="--psm 6")
+
+# ✅ DEBUG (IMPORTANT)
+        print("🧾 OCR TEXT:", extracted_text)
 
         if not extracted_text.strip():
             return JSONResponse(content={
@@ -251,11 +260,12 @@ async def detect_image(file: UploadFile = File(...)):
     except Exception as e:
         return JSONResponse(content={
             "text": "",
-            "prediction": "error",
+            "prediction": "Unknown",
             "confidence": 0,
             "suspicious_words": [],
             "error": str(e)
         })
+        
 
 # ============================
 # LOAN ELIGIBILITY
