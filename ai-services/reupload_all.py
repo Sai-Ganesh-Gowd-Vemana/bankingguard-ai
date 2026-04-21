@@ -2,7 +2,7 @@ from huggingface_hub import HfApi
 import os
 
 api = HfApi()
-HF_TOKEN = "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"  
+HF_TOKEN = os.getenv("HF_TOKEN") 
 REPO_ID  = "SaiGaneshGowdVemana/bankingguard-models"
 
 files = [

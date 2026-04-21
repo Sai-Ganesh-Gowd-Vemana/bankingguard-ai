@@ -7,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from url_features import extract_features
-
+from dotenv import load_dotenv
+load_dotenv()
 import os
 import io
 import json
