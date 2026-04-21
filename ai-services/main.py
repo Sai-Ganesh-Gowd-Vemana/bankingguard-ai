@@ -52,7 +52,7 @@ HF_REPO = "SaiGaneshGowdVemana/bankingguard-models"
 
 def download_models():
     os.makedirs("models", exist_ok=True)
-    files = ["spam_model.pkl", "tfidf_vectorizer.pkl", "url_model.pkl"]
+    files = ["spam_model.pkl", "tfidf_vectorizer.pkl", "url_model.pkl", "tfidf_url.pkl"]
     for f in files:
         if not os.path.exists(f"models/{f}"):
             print(f"⬇ Downloading {f} ...")
@@ -69,10 +69,15 @@ def download_models():
 
 download_models()
 
-model      = pickle.load(open("models/spam_model.pkl", "rb"))
-vectorizer = pickle.load(open("models/tfidf_vectorizer.pkl", "rb"))
-url_model  = pickle.load(open("models/url_model.pkl", "rb"))
+import joblib
 
+# SMS
+model = joblib.load("models/spam_model.pkl")
+vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
+
+# URL
+url_model = joblib.load("models/url_model.pkl")
+tfidf = joblib.load("models/tfidf_url.pkl")
 # ============================
 # SUSPICIOUS WORD DETECTOR
 # ============================
@@ -185,9 +190,20 @@ def detect_sms(data: MessageRequest):
 @app.post("/detect-url")
 def detect_url(data: URLRequest):
     url = data.url
-    features = extract_features(url)
-    prediction = url_model.predict([features])[0]
-    probability = url_model.predict_proba([features])[0].max()
+    from scipy.sparse import hstack
+
+# TF-IDF features
+    X_text = tfidf.transform([url])
+
+# Numeric features
+    X_num = np.array([extract_features(url)])
+
+# Combine both
+    X_final = hstack((X_text, X_num))
+
+# Predict
+    prediction = url_model.predict(X_final)[0]
+    probability = url_model.predict_proba(X_final)[0].max()
     label = "phishing" if prediction == 1 else "safe"
     reasons = get_url_reasons(url) if label == "phishing" else []
     return {

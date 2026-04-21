@@ -11,6 +11,7 @@ import joblib
 from url_features import extract_features
 
 
+
 # =========================
 # LOAD DATASET
 # =========================
@@ -18,6 +19,8 @@ from url_features import extract_features
 df = pd.read_csv("datasets/phishing_urls.csv")
 
 df.columns = ["url","label"]
+
+
 
 
 
