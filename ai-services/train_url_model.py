@@ -2,9 +2,11 @@ import pandas as pd
 import pickle
 import numpy as np
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.utils import shuffle
+import joblib
 
 from url_features import extract_features
 
@@ -18,42 +20,50 @@ df = pd.read_csv("datasets/phishing_urls.csv")
 df.columns = ["url","label"]
 
 
+
 # =========================
 # FEATURE EXTRACTION
 # =========================
 
-X = []
+from sklearn.feature_extraction.text import TfidfVectorizer
+from scipy.sparse import hstack
 
-for url in df["url"]:
-    features = extract_features(url)
-    X.append(features)
+# ===== TF-IDF FEATURES =====
+tfidf = TfidfVectorizer(max_features=300)
+X_text = tfidf.fit_transform(df["url"])
 
-X = np.array(X)
+# ===== NUMERIC FEATURES =====
+X_num = np.array([extract_features(url) for url in df["url"]])
+
+# ===== COMBINE BOTH =====
+X = hstack((X_text, X_num))
 
 y = df["label"].map({"good":0,"bad":1})
-
 
 # =========================
 # TRAIN TEST SPLIT
 # =========================
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X,y,test_size=0.2,random_state=42
+    X, y,
+    test_size=0.2,
+    stratify=y,   # 🔥 important
+    random_state=42
 )
-
 
 # =========================
 # TRAIN MODEL
 # =========================
 
 model = RandomForestClassifier(
-    n_estimators=50,
+    n_estimators=60,
     max_depth=15,
-    min_samples_split=5,
-    min_samples_leaf=3,
+    min_samples_split=6,
+    min_samples_leaf=2,
+    max_features="sqrt",
+    class_weight="balanced",   # 🔥 important
     random_state=42
 )
-
 model.fit(X_train,y_train)
 
 
@@ -72,6 +82,9 @@ print("URL Detection Accuracy:",accuracy)
 # SAVE MODEL
 # =========================
 
-pickle.dump(model,open("models/url_model.pkl","wb"))
 
-print("URL phishing model trained successfully")
+joblib.dump(model, "models/url_model.pkl", compress=3)
+joblib.dump(tfidf, "models/tfidf_url.pkl")
+
+print("URL phishing Model trained and TFIDF saved successfully")
+

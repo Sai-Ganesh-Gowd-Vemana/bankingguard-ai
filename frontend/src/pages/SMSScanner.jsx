@@ -73,26 +73,23 @@ function SMSScanner() {
       {loading && <LoadingSpinner text="Running fraud analysis..." />}
 
       {result && !loading && (
-        <ResultCard
-          prediction={result.prediction}
-          confidence={result.confidence}
-          scamKeyword="spam"
-        >
-          {result.reasons && result.reasons.length > 0 && (
-            <div>
-              <div className="reasons-title">Detected Indicators</div>
-              <div className="reasons-list">
-                {result.reasons.map((r, i) => (
-                  <div key={i} className="reason-item">
-                    <span className="reason-dot">◈</span>
-                    <span>{r}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </ResultCard>
-      )}
+  <ResultCard
+    prediction={result.prediction}
+    confidence={result.confidence}
+    scamKeyword="spam"
+  >
+    {result.suspicious_words && result.suspicious_words.length > 0 && (
+      <div>
+        <div className="reasons-title">⚠ Suspicious Words Detected</div>
+        <div className="words-wrap">
+          {result.suspicious_words.map((w, i) => (
+            <span key={i} className="word-pill">{w}</span>
+          ))}
+        </div>
+      </div>
+    )}
+  </ResultCard>
+)}
 
       <style>{`
         .card {
@@ -173,6 +170,15 @@ function SMSScanner() {
           line-height: 1.5;
         }
         .reason-dot { color: var(--danger); flex-shrink: 0; margin-top: 1px; }
+        .words-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.word-pill {
+  font-size: 12px; font-weight: 700;
+  padding: 4px 12px;
+  background: var(--danger-dim);
+  color: var(--danger);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 20px;
+}
       `}</style>
     </div>
   );

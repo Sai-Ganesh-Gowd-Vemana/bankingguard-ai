@@ -79,21 +79,36 @@ function URLScanner() {
       {loading && <LoadingSpinner text="Scanning URL..." />}
 
       {result && !loading && (
-        <ResultCard prediction={result.prediction} confidence={result.confidence} scamKeyword="phishing">
-          {result.prediction?.toLowerCase() === "phishing" && (
-            <div className="url-warning">
-              <span>⚠</span>
-              <span>Do not visit this URL. It may be designed to steal your banking credentials.</span>
+  <ResultCard prediction={result.prediction} confidence={result.confidence} scamKeyword="phishing">
+    {result.prediction?.toLowerCase() === "phishing" && (
+      <div>
+        <div className="url-warning">
+          <span>⚠</span>
+          <span>Do not visit this URL. It may be designed to steal your banking credentials.</span>
+        </div>
+        {result.reasons && result.reasons.length > 0 && (
+          <div style={{marginTop:"12px"}}>
+            <div className="reasons-title">Why it was flagged:</div>
+            <div className="reasons-list">
+              {result.reasons.map((r, i) => (
+                <div key={i} className="reason-item">
+                  <span className="reason-dot">◈</span>
+                  <span>{r}</span>
+                </div>
+              ))}
             </div>
-          )}
-          {result.prediction?.toLowerCase() !== "phishing" && (
-            <div className="url-safe-msg">
-              <span>✓</span>
-              <span>No phishing indicators detected. Always stay cautious with unknown links.</span>
-            </div>
-          )}
-        </ResultCard>
-      )}
+          </div>
+        )}
+      </div>
+    )}
+    {result.prediction?.toLowerCase() !== "phishing" && (
+      <div className="url-safe-msg">
+        <span>✓</span>
+        <span>No phishing indicators detected. Always stay cautious with unknown links.</span>
+      </div>
+    )}
+  </ResultCard>
+)}
 
       <style>{`
         .card {
@@ -184,6 +199,10 @@ function URLScanner() {
         }
         .url-warning { background: var(--danger-dim); color: var(--danger); }
         .url-safe-msg { background: var(--success-dim); color: var(--success); }
+        .reasons-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; }
+.reasons-list { display: flex; flex-direction: column; gap: 6px; }
+.reason-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+.reason-dot { color: var(--danger); flex-shrink: 0; }
       `}</style>
     </div>
   );

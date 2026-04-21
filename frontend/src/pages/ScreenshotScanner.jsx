@@ -102,15 +102,25 @@ function ScreenshotScanner() {
       {loading && <LoadingSpinner text="Running OCR + fraud analysis..." />}
 
       {result && !loading && (
-        <ResultCard prediction={result.prediction} confidence={result.confidence} scamKeyword="scam">
-          {result.text && (
-            <div>
-              <div className="extracted-label">Extracted Text (OCR)</div>
-              <pre className="extracted-text">{result.text}</pre>
-            </div>
-          )}
-        </ResultCard>
-      )}
+  <ResultCard prediction={result.prediction} confidence={result.confidence} scamKeyword="scam">
+    {result.suspicious_words && result.suspicious_words.length > 0 && (
+      <div>
+        <div className="extracted-label">⚠ Suspicious Words Found</div>
+        <div className="words-wrap">
+          {result.suspicious_words.map((w, i) => (
+            <span key={i} className="word-pill">{w}</span>
+          ))}
+        </div>
+      </div>
+    )}
+    {result.text && (
+      <div style={{marginTop:"12px"}}>
+        <div className="extracted-label">Extracted Text (OCR)</div>
+        <pre className="extracted-text">{result.text}</pre>
+      </div>
+    )}
+  </ResultCard>
+)}
 
       <style>{`
         .card {
@@ -191,7 +201,10 @@ function ScreenshotScanner() {
           line-height: 1.6;
           max-height: 160px;
           overflow-y: auto;
+          
         }
+          .words-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.word-pill { font-size: 12px; font-weight: 700; padding: 4px 12px; background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(239,68,68,0.25); border-radius: 20px; }
       `}</style>
     </div>
   );

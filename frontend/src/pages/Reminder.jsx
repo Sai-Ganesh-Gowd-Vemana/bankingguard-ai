@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { PageHeader, InputField, PrimaryButton } from "../components/UI";
 
+const API_BASE = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
+
 function Reminder() {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
@@ -9,10 +11,12 @@ function Reminder() {
 
   const loadReminders = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/reminders");
+      const res = await fetch(`${API_BASE}/reminders`);
       const data = await res.json();
       setReminders(data.reminders);
-    } catch {}
+    } catch (e) {
+      console.error("Failed to load reminders", e);
+    }
   };
 
   useEffect(() => { loadReminders(); }, []);
@@ -21,7 +25,7 @@ function Reminder() {
     if (!title || !date) return;
     setLoading(true);
     try {
-      await fetch("http://127.0.0.1:8000/add-reminder", {
+      await fetch(`${API_BASE}/add-reminder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, date }),
@@ -35,7 +39,7 @@ function Reminder() {
   };
 
   const deleteReminder = async (index) => {
-    await fetch(`http://127.0.0.1:8000/delete-reminder/${index}`, { method: "DELETE" });
+    await fetch(`${API_BASE}/delete-reminder/${index}`, { method: "DELETE" });
     loadReminders();
   };
 
@@ -61,7 +65,6 @@ function Reminder() {
       />
 
       <div className="two-col">
-        {/* Add form */}
         <div className="card">
           <div className="card-title">Add New Reminder</div>
           <div className="form-stack">
@@ -85,7 +88,6 @@ function Reminder() {
           </div>
         </div>
 
-        {/* Stats panel */}
         <div className="card stats-mini">
           <div className="mini-stat">
             <div className="mini-stat__val" style={{ color: "var(--accent)" }}>{reminders.length}</div>
@@ -106,7 +108,6 @@ function Reminder() {
         </div>
       </div>
 
-      {/* Upcoming */}
       {upcoming.length > 0 && (
         <div className="reminder-section">
           <div className="section-head">
@@ -137,7 +138,6 @@ function Reminder() {
         </div>
       )}
 
-      {/* Past */}
       {past.length > 0 && (
         <div className="reminder-section">
           <div className="section-head">
@@ -170,75 +170,34 @@ function Reminder() {
 
       <style>{`
         .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
-        .card {
-          background: var(--bg-card);
-          border: 1px solid var(--border);
-          border-radius: 16px;
-          padding: 24px;
-          animation: fadeUp 0.4s ease forwards;
-        }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; animation: fadeUp 0.4s ease forwards; box-shadow: var(--shadow-card); }
         .card-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; }
         .form-stack { display: flex; flex-direction: column; gap: 14px; }
         .card-footer { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
-
-        .stats-mini { display: flex; align-items: center; justify-content: center; gap: 0; }
+        .stats-mini { display: flex; align-items: center; justify-content: center; }
         .mini-stat { flex: 1; text-align: center; }
         .mini-stat__val { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; }
         .mini-stat__label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
         .mini-divider { width: 1px; height: 50px; background: var(--border); }
-
-        .reminder-section { margin-bottom: 20px; animation: fadeUp 0.4s ease forwards; }
-        .section-head {
-          display: flex; align-items: center; gap: 10px;
-          font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
-          color: var(--text-muted); text-transform: uppercase;
-          margin-bottom: 12px;
-        }
-        .section-dot { width: 8px; height: 8px; border-radius: 50%; }
-
+        .reminder-section { margin-bottom: 20px; }
+        .section-head { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; }
+        .section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .reminder-list { display: flex; flex-direction: column; gap: 8px; }
-        .reminder-item {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 14px 18px;
-          background: var(--bg-card);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          transition: all var(--transition);
-        }
+        .reminder-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; transition: all var(--transition); box-shadow: var(--shadow-card); }
         .reminder-item:hover { border-color: var(--border-accent); }
-        .reminder-item--today { border-color: rgba(255,209,102,0.3); background: var(--warning-dim); }
+        .reminder-item--today { border-color: rgba(245,158,11,0.3); background: var(--warning-dim); }
         .reminder-item--past { opacity: 0.6; }
-
         .reminder-icon { font-size: 18px; flex-shrink: 0; }
         .reminder-info { flex: 1; min-width: 0; }
         .reminder-title { font-weight: 600; font-size: 14px; color: var(--text-primary); }
         .reminder-date { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
         .reminder-days { font-size: 12px; font-weight: 700; flex-shrink: 0; }
-        .delete-btn {
-          width: 28px; height: 28px;
-          background: var(--bg-input);
-          border: 1px solid var(--border);
-          border-radius: 6px;
-          color: var(--text-muted);
-          cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 12px;
-          transition: all var(--transition);
-          flex-shrink: 0;
-        }
+        .delete-btn { width: 28px; height: 28px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all var(--transition); flex-shrink: 0; }
         .delete-btn:hover { background: var(--danger-dim); border-color: var(--danger); color: var(--danger); }
-
-        .empty-state {
-          text-align: center;
-          padding: 60px 20px;
-          color: var(--text-muted);
-        }
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
         .empty-icon { font-size: 40px; margin-bottom: 16px; }
         .empty-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; }
         .empty-sub { font-size: 13px; }
-
         @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
       `}</style>
     </div>
