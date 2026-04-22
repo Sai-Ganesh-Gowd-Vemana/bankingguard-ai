@@ -80,7 +80,7 @@ tfidf = joblib.load("models/tfidf_url.pkl")
 if os.name == "nt":
     pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 else:
-    pytesseract.pytesseract.tesseract_cmd = "/opt/tesseract/bin/tesseract"
+    pytesseract.pytesseract.tesseract_cmd = "/tmp/tesseract/bin/tesseract"
     
 
 
