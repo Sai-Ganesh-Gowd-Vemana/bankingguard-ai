@@ -217,15 +217,84 @@ def detect_url(data: URLRequest):
 # ============================
 # IMAGE DETECTION
 # ============================
+# @app.post("/detect-image")
+# async def detect_image(file: UploadFile = File(...)):
+#     try:
+#         contents = await file.read()
+#         image = Image.open(io.BytesIO(contents)).convert("RGB")
+#         img = np.array(image)
+#         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+#         extracted_text = pytesseract.image_to_string(gray)
+
+#         if not extracted_text.strip():
+#             return JSONResponse(content={
+#                 "text": "No text detected in image",
+#                 "prediction": "unknown",
+#                 "confidence": 0,
+#                 "suspicious_words": []
+#             })
+
+#         vector = vectorizer.transform([extracted_text])
+#         prediction = model.predict(vector)[0]
+#         probs = model.predict_proba(vector)[0]
+#         spam_index = list(model.classes_).index("spam")
+#         confidence = probs[spam_index]
+#         label = "scam" if prediction == "spam" else "safe"
+#         suspicious_words = get_suspicious_words(extracted_text) if label == "scam" else []
+
+#         return JSONResponse(content={
+#             "text": extracted_text,
+#             "prediction": label,
+#             "confidence": round(confidence * 100, 2),
+#             "suspicious_words": suspicious_words
+#         })
+
+#     except Exception as e:
+#         import traceback
+#         error_detail = traceback.format_exc()
+#         print(f"IMAGE ERROR: {error_detail}")
+#         return JSONResponse(content={
+#             "text": "",
+#             "prediction": "error",
+#             "confidence": 0,
+#             "suspicious_words": [],
+#             "error": str(e),
+#             "detail": error_detail
+#         }) 
+
 @app.post("/detect-image")
 async def detect_image(file: UploadFile = File(...)):
     try:
+        # ============================
+        # READ IMAGE
+        # ============================
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
         img = np.array(image)
-        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        extracted_text = pytesseract.image_to_string(gray)
 
+        # ============================
+        # OCR PREPROCESSING
+        # ============================
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+        # Improve contrast
+        gray = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
+
+        # Resize for better OCR
+        gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+
+        # OCR config
+        custom_config = r'--oem 3 --psm 6'
+
+        extracted_text = pytesseract.image_to_string(gray, config=custom_config)
+
+        print("====== OCR OUTPUT ======")
+        print(extracted_text)
+        print("========================")
+
+        # ============================
+        # HANDLE EMPTY TEXT
+        # ============================
         if not extracted_text.strip():
             return JSONResponse(content={
                 "text": "No text detected in image",
@@ -234,14 +303,49 @@ async def detect_image(file: UploadFile = File(...)):
                 "suspicious_words": []
             })
 
+        # ============================
+        # VECTORIZE
+        # ============================
         vector = vectorizer.transform([extracted_text])
+        print("Vector shape:", vector.shape)
+
+        # ============================
+        # MODEL PREDICTION
+        # ============================
         prediction = model.predict(vector)[0]
         probs = model.predict_proba(vector)[0]
-        spam_index = list(model.classes_).index("spam")
-        confidence = probs[spam_index]
-        label = "scam" if prediction == "spam" else "safe"
-        suspicious_words = get_suspicious_words(extracted_text) if label == "scam" else []
 
+        print("Prediction raw:", prediction)
+        print("Probabilities:", probs)
+        print("Classes:", model.classes_)
+
+        # ============================
+        # CONFIDENCE FIX
+        # ============================
+        if prediction in model.classes_:
+            pred_index = list(model.classes_).index(prediction)
+            confidence = probs[pred_index]
+        else:
+            confidence = max(probs)
+
+        # ============================
+        # LABEL
+        # ============================
+        label = "scam" if str(prediction).lower() == "spam" else "safe"
+
+        # ============================
+        # KEYWORD FALLBACK
+        # ============================
+        suspicious_words = get_suspicious_words(extracted_text)
+
+        if suspicious_words and label == "safe":
+            print("⚠️ Keyword override triggered")
+            label = "scam"
+            confidence = max(confidence, 0.7)
+
+        # ============================
+        # RESPONSE
+        # ============================
         return JSONResponse(content={
             "text": extracted_text,
             "prediction": label,
@@ -253,6 +357,7 @@ async def detect_image(file: UploadFile = File(...)):
         import traceback
         error_detail = traceback.format_exc()
         print(f"IMAGE ERROR: {error_detail}")
+
         return JSONResponse(content={
             "text": "",
             "prediction": "error",
@@ -260,8 +365,7 @@ async def detect_image(file: UploadFile = File(...)):
             "suspicious_words": [],
             "error": str(e),
             "detail": error_detail
-        })
-        
+        })        
 
 # ============================
 # LOAN ELIGIBILITY
