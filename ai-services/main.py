@@ -14,8 +14,10 @@ import io
 import json
 import pickle
 import numpy as np
-import pytesseract
+
 import cv2
+import easyocr
+
 
 from PIL import Image
 from huggingface_hub import hf_hub_download
@@ -38,13 +40,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ============================
-# TESSERACT CONFIG
-# ============================
-if os.name == "nt":
-    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-else:
-    pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+
 
 # ============================
 # LOAD MODELS
@@ -79,6 +75,10 @@ vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
 # URL
 url_model = joblib.load("models/url_model.pkl")
 tfidf = joblib.load("models/tfidf_url.pkl")
+
+# EasyOCR reader
+reader = easyocr.Reader(['en'], gpu=False)
+
 # ============================
 # SUSPICIOUS WORD DETECTOR
 # ============================
@@ -273,20 +273,14 @@ async def detect_image(file: UploadFile = File(...)):
         img = np.array(image)
 
         # ============================
-        # OCR PREPROCESSING
+        # OCR WITH CV2 PREPROCESS + EASYOCR
         # ============================
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-        # Improve contrast
-        gray = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
-
-        # Resize for better OCR
         gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+        _, gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        # OCR config
-        custom_config = r'--oem 3 --psm 6'
-
-        extracted_text = pytesseract.image_to_string(gray, config=custom_config)
+        results = reader.readtext(gray, detail=0)
+        extracted_text = " ".join(results)
 
         print("====== OCR OUTPUT ======")
         print(extracted_text)
@@ -334,14 +328,23 @@ async def detect_image(file: UploadFile = File(...)):
         label = "scam" if str(prediction).lower() == "spam" else "safe"
 
         # ============================
-        # KEYWORD FALLBACK
+        # STRONGER KEYWORD FALLBACK
         # ============================
-        suspicious_words = get_suspicious_words(extracted_text)
+        SCAM_KEYWORDS = [
+            "suspended", "blocked", "verify", "kyc", "otp",
+            "click", "pan", "urgent", "immediately", "update",
+            "account", "http", "www", "bit.ly", "link",
+            "password", "login", "expire", "claim", "prize"
+        ]
+        text_lower = extracted_text.lower()
+        keyword_hits = [w for w in SCAM_KEYWORDS if w in text_lower]
 
-        if suspicious_words and label == "safe":
-            print("⚠️ Keyword override triggered")
+        if len(keyword_hits) >= 2 and label == "safe":
+            print(f"⚠️ Keyword override: {keyword_hits}")
             label = "scam"
-            confidence = max(confidence, 0.7)
+            confidence = max(confidence, 0.75)
+
+        suspicious_words = get_suspicious_words(extracted_text) if label == "scam" else []
 
         # ============================
         # RESPONSE
@@ -365,8 +368,7 @@ async def detect_image(file: UploadFile = File(...)):
             "suspicious_words": [],
             "error": str(e),
             "detail": error_detail
-        })        
-
+        })
 # ============================
 # LOAN ELIGIBILITY
 # ============================
