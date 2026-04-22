@@ -76,11 +76,19 @@ vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
 # URL
 url_model = joblib.load("models/url_model.pkl")
 tfidf = joblib.load("models/tfidf_url.pkl")
+import shutil
 
 if os.name == "nt":
     pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 else:
-    pytesseract.pytesseract.tesseract_cmd = "/tmp/tesseract/bin/tesseract"
+    # Auto-find tesseract binary
+    found = shutil.which("tesseract")
+    if found:
+        pytesseract.pytesseract.tesseract_cmd = found
+    else:
+        # tesseract-bin pip package path
+        import tesseract
+        pytesseract.pytesseract.tesseract_cmd = tesseract.get_tesseract_path()
     
 
 
