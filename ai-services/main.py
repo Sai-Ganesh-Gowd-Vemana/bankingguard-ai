@@ -15,8 +15,9 @@ import json
 import pickle
 import numpy as np
 
+import pytesseract
 import cv2
-import easyocr
+
 
 
 from PIL import Image
@@ -76,8 +77,12 @@ vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
 url_model = joblib.load("models/url_model.pkl")
 tfidf = joblib.load("models/tfidf_url.pkl")
 
-# EasyOCR reader
-reader = easyocr.Reader(['en'], gpu=False)
+if os.name == "nt":
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+else:
+    pytesseract.pytesseract.tesseract_cmd = "/opt/tesseract/bin/tesseract"
+    
+
 
 # ============================
 # SUSPICIOUS WORD DETECTOR
@@ -273,14 +278,14 @@ async def detect_image(file: UploadFile = File(...)):
         img = np.array(image)
 
         # ============================
-        # OCR WITH CV2 PREPROCESS + EASYOCR
+        # OCR WITH CV2 PREPROCESS + PYTESSERACT
         # ============================
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
         _, gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        results = reader.readtext(gray, detail=0)
-        extracted_text = " ".join(results)
+        custom_config = r'--oem 3 --psm 6'
+        extracted_text = pytesseract.image_to_string(gray, config=custom_config)
 
         print("====== OCR OUTPUT ======")
         print(extracted_text)
