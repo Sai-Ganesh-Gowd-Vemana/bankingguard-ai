@@ -399,12 +399,14 @@ def loan_eligibility(data: LoanRequest):
     elif credit >= 700:   score += 2
     elif credit >= 650:   score += 1
 
-    if loans == 0:        score += 2
-    elif loans <= 5000:   score += 2
-    elif loans <= 15000:  score += 1
+    if loans == 0:         score += 3
+    elif loans <= 5000:    score += 2
+    elif loans <= 15000:   score += 1
+    elif loans <= 30000:   score += 0
+    else:                  score -= 3   # heavy debt penalty
 
-    if score >= 5:   result = "Eligible"
-    elif score >= 3: result = "Possibly Eligible"
+    if score >= 6:   result = "Eligible"
+    elif score >= 4: result = "Possibly Eligible"
     else:            result = "Not Eligible"
 
     return {
@@ -413,7 +415,6 @@ def loan_eligibility(data: LoanRequest):
         "existing_loans": loans,
         "loan_result": result
     }
-
 # ============================
 # INVESTMENT CHECK
 # ============================
