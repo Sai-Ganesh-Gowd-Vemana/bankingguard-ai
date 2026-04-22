@@ -2,10 +2,12 @@
 
 pip install -r requirements.txt
 
+# Install tesseract using pip's system
+pip install tesseract-bin 2>/dev/null || true
 
-# Use /tmp which is writable on Render
-mkdir -p /tmp/tesseract
-wget -q https://github.com/tesseract-ocr/tesseract/releases/download/5.3.3/tesseract-ocr-linux-amd64.tar.gz -O /tmp/tess.tar.gz
-tar -xzf /tmp/tess.tar.gz -C /tmp/tesseract --strip-components=1
-export PATH="/tmp/tesseract/bin:$PATH"
-tesseract --version
+# Try downloading prebuilt binary
+mkdir -p /tmp/tesseract/bin
+curl -sL "https://github.com/Jim-Dev/tesseract-binary/releases/download/v5.0.0/tesseract_linux_amd64" \
+     -o /tmp/tesseract/bin/tesseract
+chmod +x /tmp/tesseract/bin/tesseract
+/tmp/tesseract/bin/tesseract --version || echo "tesseract install failed"
